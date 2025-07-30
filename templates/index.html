@@ -15,15 +15,22 @@
       {% if clips %}
       <div class="row">
         {% for clip in clips %}
-        <div class="col-12 mb-4">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <h6 class="card-title">{{ clip }}</h6>
-              <video controls preload="metadata" class="w-100">
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card shadow-sm h-100">
+            <a
+              href="{{ url_for('download_clip', filename=clip) }}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="d-block text-center"
+            >
+              <video controls preload="metadata" class="w-100 mb-2">
                 <source src="{{ url_for('get_clip', filename=clip) }}" type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
-            </div>
+              <button class="btn btn-primary mt-2">Download</button>
+              <button class="btn btn-primary">Download2</button>
+              <button class="btn btn-paska">btn</button>
+            </a>
           </div>
         </div>
         {% endfor %}

@@ -42,5 +42,16 @@ def get_clip(filename: str) -> Response:
         abort(404)
 
 
+@app.route("/clips/<filename>/download")
+def download_clip(filename: str) -> Response:
+    """Download a clip by its filename."""
+    now = datetime.datetime.now()
+    CLIPS_PATH_TODAY = ROOT_CLIPS_PATH / now.strftime(SUB_DIR_TEMPLATE)
+    try:
+        return send_from_directory(CLIPS_PATH_TODAY, filename, as_attachment=True)
+    except FileNotFoundError:
+        abort(404)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

@@ -17,13 +17,14 @@ THUMB_DIR = (
 
 app = Flask(__name__)
 
-VIDEO_DIR = str(TODAYS_CLIPS)
 
 THUMB_DIR = str(THUMB_DIR)
 
 
 # --- Utility: list all clips sorted by newest ---
 def get_clips():
+    TODAYS_CLIPS = ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE)
+    VIDEO_DIR = str(TODAYS_CLIPS)
     return sorted(
         [f for f in os.listdir(TODAYS_CLIPS) if f.endswith(".mp4")], reverse=True
     )
@@ -116,6 +117,10 @@ def api_clips():
 # --- Serve thumbnails ---
 @app.route("/thumb/<path:filename>")
 def thumb(filename):
+    THUMB_DIR = (
+        ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE) / "thumbs"
+    )
+
     path = os.path.join(THUMB_DIR, filename)
     return send_file(path)
 
@@ -123,6 +128,8 @@ def thumb(filename):
 # --- Serve videos with range support ---
 @app.route("/video/<path:filename>")
 def video(filename):
+    TODAYS_CLIPS = ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE)
+    VIDEO_DIR = str(TODAYS_CLIPS)
     path = os.path.join(VIDEO_DIR, filename.strip("video"))
     file_size = os.path.getsize(path)
     range_header = request.headers.get("Range", None)

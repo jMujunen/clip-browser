@@ -2,12 +2,15 @@ import datetime
 import os
 from pathlib import Path
 
-from flask import Flask, abort, render_template, send_from_directory
+from flask import Flask, abort, render_template, send_file, send_from_directory
 from flask.wrappers import Response
 
 app = Flask(__name__)
 ROOT_CLIPS_PATH = Path("/mnt/hdd/.webcam/")
 SUB_DIR_TEMPLATE = "%Y/%m/%d"
+THUMB_DIR = (
+    ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE) / "thumbs"
+)
 
 
 @app.route("/")
@@ -24,6 +27,13 @@ def index() -> str:
     except FileNotFoundError:
         clips = []
     return render_template("index.html", clips=clips)
+
+
+# --- Serve thumbnails ---
+@app.route("/thumb/<path:filename>")
+def thumb(filename):
+    path = os.path.join(THUMB_DIR, filename)
+    return send_file(path)
 
 
 @app.route("/clips/<filename>")
@@ -54,4 +64,4 @@ def download_clip(filename: str) -> Response:
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5005, debug=False)

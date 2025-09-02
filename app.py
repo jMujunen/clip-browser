@@ -17,7 +17,7 @@ THUMB_DIR = (
 
 app = Flask(__name__)
 
-VIDEO_DIR = str(ROOT_CLIPS_PATH)
+VIDEO_DIR = str(TODAYS_CLIPS)
 
 THUMB_DIR = str(THUMB_DIR)
 
@@ -123,7 +123,7 @@ def thumb(filename):
 # --- Serve videos with range support ---
 @app.route("/video/<path:filename>")
 def video(filename):
-    path = os.path.join(VIDEO_DIR, filename)
+    path = os.path.join(VIDEO_DIR, filename.strip("video"))
     file_size = os.path.getsize(path)
     range_header = request.headers.get("Range", None)
     if not range_header:

@@ -2,38 +2,16 @@
 <html>
   <head>
     <title>Camera Clips</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        background: #f9f9f9;
-      }
-      .clip {
-        margin: 20px;
-        display: inline-block;
-        vertical-align: top;
-      }
-      video,
-      img {
-        width: 320px;
-        height: auto;
-        border-radius: 8px;
-      }
-      #loading {
-        text-align: center;
-        margin: 20px;
-        font-size: 14px;
-        color: #666;
-      }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
   </head>
   <body>
-    <h2>Clips from Today</h2>
+    <h2>{{ date }}</h2>
     <div id="clips"></div>
     <div id="loading">Loading...</div>
 
     <script>
       let page = 1;
-      const limit = 5; // clips per batch
+      const limit = 3; // clips per batch
       let loading = false;
 
       async function loadClips() {
@@ -47,10 +25,11 @@
           const div = document.createElement("div");
           div.className = "clip";
           div.innerHTML = `
+                    <p>${clip}</p>
                     <video controls preload="none" poster="/thumb/${clip.replace(".mp4", ".jpg")}">
                         <source src="/video/${clip}" type="video/mp4">
                     </video>
-                    <p>${clip}</p>`;
+                    `;
           container.appendChild(div);
         });
 

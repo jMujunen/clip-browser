@@ -1,104 +1,63 @@
 import datetime
 import os
+import subprocess
 from pathlib import Path
 
-from flask import Flask, Response, jsonify, render_template_string, request, send_file
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 ROOT_CLIPS_PATH = Path("/mnt/hdd/.webcam/")
-
-SUB_DIR_TEMPLATE = "%Y/%m/%d"
-
-TODAYS_CLIPS = ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE)
-
-THUMB_DIR = (
-    ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE) / "thumbs"
-)
-
+TODAYS_CLIPS_TEMPLATE = "%Y/%m/%d"
 
 app = Flask(__name__)
 
 
-THUMB_DIR = str(THUMB_DIR)
+def ensure_thumbnail(video_path: Path, thumb_path: Path):
+    """Generate thumbnail if missing using ffmpeg."""
+    if not os.path.exists(thumb_path):
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-i",
+                f"file:{video_path}",
+                "-ss",
+                "00:00:01",  # grab a frame at 1s
+                "-vframes",
+                "1",
+                "-vf",
+                "scale=320:-1",
+                "-n",
+                f"file:{thumb_path}",
+            ],
+            check=False,
+        )
 
 
-# --- Utility: list all clips sorted by newest ---
 def get_clips():
-    TODAYS_CLIPS = ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE)
-    VIDEO_DIR = str(TODAYS_CLIPS)
-    return sorted(
-        [f for f in os.listdir(TODAYS_CLIPS) if f.endswith(".mp4")], reverse=True
-    )
+    """List all clips in the directory."""
+    # Get current date and time
+    now = datetime.datetime.now()
+    # Create a path to the directory for the current date
+    todays_clips = ROOT_CLIPS_PATH / now.strftime(TODAYS_CLIPS_TEMPLATE)
+    try:
+        clips = [f for f in os.listdir(todays_clips) if f.endswith((".mp4", ".mkv"))]
+        clips.sort(reverse=True)  # Newest first
+    except FileNotFoundError:
+        clips = []
+
+    for clip in clips:
+        full_path = todays_clips / clip
+        ensure_thumbnail(
+            full_path, Path(todays_clips / "thumbs" / clip.replace(".mp4", ".jpg"))
+        )
+    return clips
 
 
-# --- Index page with infinite scroll ---
 @app.route("/")
-def index():
+def index() -> str:
+    # List only .mp4 files
     clips = get_clips()
-    return render_template_string(
-        """
-    <!doctype html>
-    <html>
-    <head>
-        <title>Camera Clips</title>
-        <style>
-            body { font-family: sans-serif; background: #f9f9f9; }
-            .clip { margin: 20px; display: inline-block; vertical-align: top; }
-            video, img { width: 320px; height: auto; border-radius: 8px; }
-            #loading { text-align: center; margin: 20px; font-size: 14px; color: #666; }
-        </style>
-    </head>
-    <body>
-        <h2>Clips from Today</h2>
-        <div id="clips"></div>
-        <div id="loading">Loading...</div>
-
-        <script>
-        let page = 1;
-        const limit = 5;   // clips per batch
-        let loading = false;
-
-        async function loadClips() {
-            if (loading) return;
-            loading = true;
-            const res = await fetch(`/api/clips?page=${page}&limit=${limit}`);
-            const data = await res.json();
-
-            const container = document.getElementById("clips");
-            data.clips.forEach(clip => {
-                const div = document.createElement("div");
-                div.className = "clip";
-                div.innerHTML = `
-                    <video controls preload="none" poster="/thumb/${clip.replace('.mp4','.jpg')}">
-                        <source src="/video/${clip}" type="video/mp4">
-                    </video>
-                    <p>${clip}</p>`;
-                container.appendChild(div);
-            });
-
-            if (data.has_more) {
-                page++;
-                observer.observe(document.querySelector("#loading"));
-            } else {
-                document.getElementById("loading").innerText = "No more clips";
-            }
-            loading = false;
-        }
-
-        // IntersectionObserver to detect when #loading comes into view
-        const observer = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting) {
-                observer.unobserve(entries[0].target);
-                loadClips();
-            }
-        }, { rootMargin: "100px" });
-
-        // Start initial load
-        loadClips();
-        </script>
-    </body>
-    </html>
-    """,
-        clips=clips,
+    return render_template(
+        "index.html", date=datetime.datetime.now().strftime("%A %B %d"), clips=clips
     )
 
 
@@ -106,7 +65,7 @@ def index():
 @app.route("/api/clips")
 def api_clips():
     page = int(request.args.get("page", 1))
-    limit = int(request.args.get("limit", 5))
+    limit = int(request.args.get("limit", 3))
     all_clips = get_clips()
     start = (page - 1) * limit
     end = start + limit
@@ -118,7 +77,9 @@ def api_clips():
 @app.route("/thumb/<path:filename>")
 def thumb(filename):
     THUMB_DIR = (
-        ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE) / "thumbs"
+        ROOT_CLIPS_PATH
+        / datetime.datetime.now().strftime(TODAYS_CLIPS_TEMPLATE)
+        / "thumbs"
     )
 
     path = os.path.join(THUMB_DIR, filename)
@@ -128,9 +89,9 @@ def thumb(filename):
 # --- Serve videos with range support ---
 @app.route("/video/<path:filename>")
 def video(filename):
-    TODAYS_CLIPS = ROOT_CLIPS_PATH / datetime.datetime.now().strftime(SUB_DIR_TEMPLATE)
-    VIDEO_DIR = str(TODAYS_CLIPS)
-    path = os.path.join(VIDEO_DIR, filename.strip("video"))
+    now = datetime.datetime.now()
+    todays_clips = ROOT_CLIPS_PATH / now.strftime(TODAYS_CLIPS_TEMPLATE)
+    path = os.path.join(todays_clips, filename.strip(".video"))
     file_size = os.path.getsize(path)
     range_header = request.headers.get("Range", None)
     if not range_header:

@@ -1,39 +1,85 @@
 body {
-  font-family: sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+    Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   margin: 0;
-  background: #111;
-  color: #eee;
+  background: #1e1e1e;
+  color: #f4f4f9;
+  line-height: 1.6;
 }
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 10px;
-  padding: 10px;
-}
-.clip {
-  background: #222;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.clip img,
-.clip video {
-  width: 100%;
-  display: block;
-}
-.clip video {
-  max-height: 200px;
-}
-.clip p {
-  font-size: 12px;
+
+h2 {
   text-align: center;
-  margin: 4px;
-}
-button {
-  margin: 5px;
-  padding: 5px;
-  width: 100%;
-  border: none;
-  border-radius: 5px;
-  background: #444;
+  padding: 1rem;
+  font-size: 2rem;
   color: #fff;
+}
+
+#clips {
+  display: flex;
+  flex-direction: column;
+  /* grid-template-columns: repeat(auto-fit, minmax(640px, 1fr)); */
+  gap: 1.5rem;
+  padding: 1.2rem;
+  max-width: 1000px;
+  margin: auto;
+}
+
+.clip {
+  background: #2a2a2a;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(37, 35, 35, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.clip video {
+  width: 100%;
+  height: auto;
+  background: #000;
+}
+
+.clip p {
+  font-size: 1.4rem;
+  text-align: center;
+  margin: 0.5rem 0 1rem;
+  color: #bbb;
+}
+
+button,
+.btn-primary,
+.btn-download {
+  display: inline-block;
+  margin: 0.5rem auto;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+  background: #0078d7;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #005fa3;
+}
+
+.btn-download {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-download:hover {
+  background: #218838;
+}
+
+#loading {
+  text-align: center;
+  margin: 2rem;
+  font-size: 1rem;
+  color: #aaa;
 }
